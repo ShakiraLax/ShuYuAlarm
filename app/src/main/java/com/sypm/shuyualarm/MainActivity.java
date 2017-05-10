@@ -62,7 +62,7 @@ public class MainActivity extends BaseActivity {
             if (!RememberHelper.getStoreSn().equals("")) {
                 getOrderByStoreSn();
             }
-            handler.postDelayed(this, 20000);
+            handler.postDelayed(this, 60000);
         }
     };
 
@@ -179,7 +179,7 @@ public class MainActivity extends BaseActivity {
                 if (response.body() != null) {
                     if (response.body().status.equals("1")) {
                         orderBean = response.body();
-                        if (!orderBean.number.equals("0")) {
+                        if (orderBean.number.equals("0")) {
                             Resources resources = getActivity().getResources();
                             Drawable btnDrawable2 = resources.getDrawable(R.drawable.but_bg);
                             linearLayout.setBackgroundDrawable(btnDrawable2);
@@ -200,7 +200,7 @@ public class MainActivity extends BaseActivity {
                             alarmContent.setVisibility(View.VISIBLE);
 
                             try {
-                                mp.setDataSource(getActivity(), Uri.parse("android.resource://" + getActivity().getPackageName() + "/" + R.raw.notify2));
+                                mp.setDataSource(getActivity(), Uri.parse("android.resource://" + getActivity().getPackageName() + "/" + R.raw.store));
                                 mp.prepare();
                             } catch (IOException e) {
                                 e.printStackTrace();
