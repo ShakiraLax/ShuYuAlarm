@@ -15,6 +15,10 @@ public class RememberHelper {
         Remember.putString("storeName", storeName);
     }
 
+    public static void saveStoreSn(String storeSn) {
+        Remember.putString("storeSn", storeSn);
+    }
+
     public static String getNumber() {
         return Remember.getString("number", "");
     }
@@ -25,6 +29,10 @@ public class RememberHelper {
 
     public static String getStoreName() {
         return Remember.getString("storeName", "");
+    }
+
+    public static String getStoreSn() {
+        return Remember.getString("storeSn", "");
     }
 
 }

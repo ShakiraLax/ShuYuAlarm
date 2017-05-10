@@ -22,9 +22,11 @@ public class RetrofitClient {
 
     public static final String TEST_HOST = "http://test.sypm.cn/ship/";//测试访问用HOST
 
+    public static final String INNER_HOST = "http://192.168.2.35/";//内网访问的HOST
+
     public static final String CHECK_VERSION = "http://test.sypm.cn/ship/site/checkversion.html";
 
-    public static String HOST = TEST_HOST;
+    public static String HOST = INNER_HOST;
 
     private RetrofitClient() {
         HttpLoggingInterceptor interceptor = new HttpLoggingInterceptor();

@@ -21,9 +21,12 @@ import android.widget.Toast;
 
 import com.sypm.shuyualarm.api.RetrofitClient;
 import com.sypm.shuyualarm.data.DataResult;
+import com.sypm.shuyualarm.data.Order;
 import com.sypm.shuyualarm.data.OrderBySn;
+import com.sypm.shuyualarm.data.StoreName;
 import com.sypm.shuyualarm.utils.BaseActivity;
 import com.sypm.shuyualarm.utils.MD5Utils;
+import com.sypm.shuyualarm.utils.RememberHelper;
 
 import java.io.IOException;
 
@@ -37,7 +40,9 @@ public class MainActivity extends BaseActivity {
 
     private Button change;
 
-    private OrderBySn order;
+    private Order orderBean;
+
+    private StoreName storeNameBean;
 
     private TextView storeName, alarmText, alarmContent;
 
@@ -45,18 +50,22 @@ public class MainActivity extends BaseActivity {
 
     private ImageView imageView;
 
-    //门店配送
     private MediaPlayer mp = new MediaPlayer();
-    //配送员配送
-    private MediaPlayer mp2 = new MediaPlayer();
+
+    private String inputStoreSn;
+
+    private String getStoreName;
+
 
     Handler handler = new Handler();
     Runnable runnable = new Runnable() {
         @Override
         public void run() {
             recLen++;
-            getOrder();
-            handler.postDelayed(this, 30000);
+            if (!RememberHelper.getStoreSn().equals("")) {
+                getOrderByStoreSn();
+            }
+            handler.postDelayed(this, 20000);
         }
     };
 
@@ -66,22 +75,8 @@ public class MainActivity extends BaseActivity {
         //取消状态栏
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_main);
-        login();
         initView();
-//        getStoreNameByStoreSn();
-//        getOrderByStoreSn();
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    Thread.sleep(3000);
-                    runnable.run();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }).start();
-
+        runnable.run();
     }
 
     private void initView() {
@@ -91,6 +86,10 @@ public class MainActivity extends BaseActivity {
         alarmContent = (TextView) findViewById(R.id.alarmContent);
         linearLayout = (LinearLayout) findViewById(R.id.stop);
         imageView = (ImageView) findViewById(R.id.alarmImage);
+
+        if (RememberHelper.getStoreName() != null) {
+            storeName.setText(RememberHelper.getStoreName());
+        }
 
         /**
          * 修改门店名称
@@ -106,29 +105,51 @@ public class MainActivity extends BaseActivity {
                 button.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
-                        String name = storeSn.getText().toString();
-                        Toast.makeText(getActivity(), name, Toast.LENGTH_SHORT).show();
-                        storeName2.setText(name);
+                        if (!storeSn.getText().toString().equals("")) {
+                            inputStoreSn = storeSn.getText().toString();
+                            Call<StoreName> call = RetrofitClient.getInstance().getSYService().getStoreNameByStoreSn(inputStoreSn);
+                            call.enqueue(new Callback<StoreName>() {
+                                @Override
+                                public void onResponse(Call<StoreName> call, Response<StoreName> response) {
+                                    if (response.body() != null) {
+                                        if (response.body().status.equals("1")) {
+                                            storeNameBean = response.body();
+                                            if (response.body().storeName != null) {
+                                                getStoreName = storeNameBean.storeName;
+                                                RememberHelper.saveStoreName(getStoreName);
+                                                RememberHelper.saveStoreSn(inputStoreSn);
+                                                storeName2.setText(getStoreName);
+                                            } else {
+                                                Toast.makeText(getActivity(), "输入门店编号有误", Toast.LENGTH_LONG).show();
+                                            }
+                                        } else {
+
+                                        }
+                                    } else {
+                                        Toast.makeText(getActivity(), "根据门店编号获取门店名称失败", Toast.LENGTH_LONG).show();
+                                    }
+                                }
+
+                                @Override
+                                public void onFailure(Call<StoreName> call, Throwable t) {
+
+                                }
+                            });
+                        } else {
+                            Toast.makeText(getActivity(), "门店编码不能为空", Toast.LENGTH_LONG).show();
+                        }
                     }
                 });
-                /*final AlertDialog.Builder dialog = new AlertDialog.Builder(getActivity());
-                dialog.setView(renameView);
-                dialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
-                    @Override
-                    public void onCancel(DialogInterface dialogInterface) {
 
-                    }
-                }).create();
-                dialog.show();*/
+                /**
+                 * 弹窗消失事件
+                 * */
                 Dialog alertDialog = new AlertDialog.Builder(getActivity())
                         .setView(renameView)
                         .setOnCancelListener(new DialogInterface.OnCancelListener() {
                             @Override
                             public void onCancel(DialogInterface dialogInterface) {
-                                Toast.makeText(getActivity(), "取消事件已触发", Toast.LENGTH_SHORT).show();
-                                if (storeSn.getText().toString() != null) {
-                                    storeName.setText(storeSn.getText().toString());
-                                }
+                                storeName.setText(RememberHelper.getStoreName());
                             }
                         })
                         .create();
@@ -143,51 +164,25 @@ public class MainActivity extends BaseActivity {
         linearLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (mp.isPlaying()) {
-                    mp.reset();
-                }
+//                if (mp.isPlaying()) {
+//                    mp.reset();
+//                }
             }
         });
     }
 
-    private void login() {
-        Call<DataResult> call = RetrofitClient.getInstance().getSYService().login("113802", MD5Utils.md5Encode("123123"), null);
-        call.enqueue(new Callback<DataResult>() {
+    /**
+     * 获取订单
+     */
+    private void getOrderByStoreSn() {
+        Call<Order> call = RetrofitClient.getInstance().getSYService().getOrderByStoreSn(RememberHelper.getStoreSn());
+        call.enqueue(new Callback<Order>() {
             @Override
-            public void onResponse(Call<DataResult> call, Response<DataResult> response) {
+            public void onResponse(Call<Order> call, Response<Order> response) {
                 if (response.body() != null) {
                     if (response.body().status.equals("1")) {
-                        Toast.makeText(getActivity(), "登陆成功", Toast.LENGTH_SHORT).show();
-                    }
-                }
-            }
-
-            @Override
-            public void onFailure(Call<DataResult> call, Throwable t) {
-//                Toast.makeText(getActivity(), "登陆失败", Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-
-    private void getOrder() {
-        Call<OrderBySn> getOrder = RetrofitClient.getInstance().getSYService().getOrder();
-        getOrder.enqueue(new Callback<OrderBySn>() {
-            @Override
-            public void onResponse(Call<OrderBySn> call, Response<OrderBySn> response) {
-                if (response.body() != null) {
-                    if (response.body().status == 1) {
-                        Toast.makeText(getActivity(), "真的有订单了", Toast.LENGTH_LONG).show();
-                    } else if (response.body().status == 0) {
-                        if (recLen % 2 == 1) {
-                            Resources resources = getActivity().getResources();
-                            Drawable btnDrawable = resources.getDrawable(R.drawable.but_bg2);
-                            linearLayout.setBackgroundDrawable(btnDrawable);
-                            Resources resources2 = getActivity().getResources();
-                            Drawable btnDrawable2 = resources2.getDrawable(R.drawable.alarm2);
-                            imageView.setBackgroundDrawable(btnDrawable2);
-                            alarmText.setText("来订单了");
-                            alarmContent.setVisibility(View.VISIBLE);
-                        } else {
+                        orderBean = response.body();
+                        if (!orderBean.number.equals("0")) {
                             Resources resources = getActivity().getResources();
                             Drawable btnDrawable2 = resources.getDrawable(R.drawable.but_bg);
                             linearLayout.setBackgroundDrawable(btnDrawable2);
@@ -196,63 +191,45 @@ public class MainActivity extends BaseActivity {
                             imageView.setBackgroundDrawable(btnDrawable3);
                             alarmText.setText("联网成功");
                             alarmContent.setVisibility(View.INVISIBLE);
-                        }
-                        Toast.makeText(getActivity(), "其实没订单", Toast.LENGTH_LONG).show();
-                        try {
-                            mp.setDataSource(getActivity(), Uri.parse("android.resource://" + getActivity().getPackageName() + "/" + R.raw.notify2));
-                            mp.prepare();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                        mp.start();
-                        mp.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-                            @Override
-                            public void onCompletion(MediaPlayer mediaPlayer) {
-                                if (mp != null) {
-                                    Toast.makeText(getActivity(), "播放完毕", Toast.LENGTH_LONG).show();
-                                    mp.stop();
-                                    mp.reset();
-                                }
+
+                        } else {
+                            Resources resources = getActivity().getResources();
+                            Drawable btnDrawable = resources.getDrawable(R.drawable.but_bg2);
+                            linearLayout.setBackgroundDrawable(btnDrawable);
+                            Resources resources2 = getActivity().getResources();
+                            Drawable btnDrawable2 = resources2.getDrawable(R.drawable.alarm2);
+                            imageView.setBackgroundDrawable(btnDrawable2);
+                            alarmText.setText("来订单了");
+                            alarmContent.setVisibility(View.VISIBLE);
+
+                            try {
+                                mp.setDataSource(getActivity(), Uri.parse("android.resource://" + getActivity().getPackageName() + "/" + R.raw.notify2));
+                                mp.prepare();
+                            } catch (IOException e) {
+                                e.printStackTrace();
                             }
-                        });
+                            mp.start();
+                            mp.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                                @Override
+                                public void onCompletion(MediaPlayer mediaPlayer) {
+                                    if (mp != null) {
+                                        Toast.makeText(getActivity(), "播放完毕", Toast.LENGTH_LONG).show();
+                                        mp.stop();
+                                        mp.reset();
+                                    }
+                                }
+                            });
+                        }
+                    } else {
+
                     }
                 } else {
-                    Toast.makeText(getActivity(), "未获取到数据", Toast.LENGTH_LONG).show();
+                    Toast.makeText(getActivity(), "根据门店编号获取订单失败", Toast.LENGTH_LONG).show();
                 }
             }
 
             @Override
-            public void onFailure(Call<OrderBySn> call, Throwable t) {
-                Toast.makeText(getActivity(), "服务器获取失败", Toast.LENGTH_LONG).show();
-            }
-        });
-    }
-
-    private void getOrderByStoreSn() {
-        Call<DataResult> call = RetrofitClient.getInstance().getSYService().getOrderByStoreSn("001");
-        call.enqueue(new Callback<DataResult>() {
-            @Override
-            public void onResponse(Call<DataResult> call, Response<DataResult> response) {
-
-            }
-
-            @Override
-            public void onFailure(Call<DataResult> call, Throwable t) {
-
-            }
-        });
-    }
-
-    private void getStoreNameByStoreSn() {
-        Call<DataResult> call = RetrofitClient.getInstance().getSYService().getStoreNameByStoreSn("001");
-        call.enqueue(new Callback<DataResult>() {
-            @Override
-            public void onResponse(Call<DataResult> call, Response<DataResult> response) {
-
-            }
-
-            @Override
-            public void onFailure(Call<DataResult> call, Throwable t) {
+            public void onFailure(Call<Order> call, Throwable t) {
 
             }
         });

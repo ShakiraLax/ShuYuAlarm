@@ -2,7 +2,9 @@ package com.sypm.shuyualarm.api;
 
 
 import com.sypm.shuyualarm.data.DataResult;
+import com.sypm.shuyualarm.data.Order;
 import com.sypm.shuyualarm.data.OrderBySn;
+import com.sypm.shuyualarm.data.StoreName;
 
 import retrofit2.Call;
 import retrofit2.http.Field;
@@ -23,12 +25,12 @@ public interface ShuYuService {
 
     /*获取门店名称*/
     @FormUrlEncoded
-    @POST("shiporder/storename.html")
-    Call<DataResult> getStoreNameByStoreSn(@Field("storeSn") String storeSn);
+    @POST("doorbell/v1/store/get")
+    Call<StoreName> getStoreNameByStoreSn(@Field("storeSn") String storeSn);
 
     /*根据门店编号获取订单*/
     @FormUrlEncoded
-    @POST("shiporder/getorderbystoresn.html")
-    Call<DataResult> getOrderByStoreSn(@Field("storeSn") String storeSn);
+    @POST("doorbell/v1/order/get")
+    Call<Order> getOrderByStoreSn(@Field("orderSn") String orderSn);
 
 }
