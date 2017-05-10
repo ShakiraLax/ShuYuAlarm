@@ -20,12 +20,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.sypm.shuyualarm.api.RetrofitClient;
-import com.sypm.shuyualarm.data.DataResult;
 import com.sypm.shuyualarm.data.Order;
-import com.sypm.shuyualarm.data.OrderBySn;
 import com.sypm.shuyualarm.data.StoreName;
 import com.sypm.shuyualarm.utils.BaseActivity;
-import com.sypm.shuyualarm.utils.MD5Utils;
 import com.sypm.shuyualarm.utils.RememberHelper;
 
 import java.io.IOException;
