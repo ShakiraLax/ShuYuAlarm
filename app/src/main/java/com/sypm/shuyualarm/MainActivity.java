@@ -129,7 +129,7 @@ public class MainActivity extends BaseActivity {
 
                                 @Override
                                 public void onFailure(Call<StoreName> call, Throwable t) {
-
+                                    Toast.makeText(getActivity(), "您连接的是内网吗？", Toast.LENGTH_LONG).show();
                                 }
                             });
                         } else {
