@@ -61,6 +61,8 @@ public class MainActivity extends BaseActivity {
             recLen++;
             if (!RememberHelper.getStoreSn().equals("")) {
                 getOrderByStoreSn();
+            }else {
+                Toast.makeText(getActivity(), "请修改门店名称！", Toast.LENGTH_LONG).show();
             }
             handler.postDelayed(this, 60000);
         }
